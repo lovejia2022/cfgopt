@@ -1,0 +1,60 @@
+#ifndef CFGOPT_{{name}}_H_
+#define CFGOPT_{{name}}_H_
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
+
+struct cfgopt_{{name}} {
+	{%- for flag in flags %}
+	{{flag.type.c_type()}} cfg_{{flag.name}};
+	{%- endfor %}
+};
+
+void cfgopt_{{name}}_init(struct cfgopt_{{name}} *cfg);
+#ifdef CFGOPT_IMPL_{{name}}
+void cfgopt_{{name}}_init(struct cfgopt_{{name}} *cfg)
+{
+	{%- for flag in flags %}
+	cfg->cfg_{{flag.name}} = {{flag.type.c_default()}};
+	{%- endfor %}
+}
+#endif // CFGOPT_IMPL_{{name}}
+
+void cfgopt_{{name}}_parse(struct cfgopt_{{name}} *cfg, int argc, char **argv);
+#ifdef CFGOPT_IMPL_{{name}}
+void cfgopt_{{name}}_parse(struct cfgopt_{{name}} *cfg, int argc, char **argv)
+{
+	int argi;
+	int len;
+
+	for (argi = 0; argi < argc; ++argc) {
+		{%- for flag in flags %}
+
+		len = strlen("{{flag.name}}");
+		if (strncmp("-{{flag.name}}", argv[argi], len + 2)) {
+			if (argv[argi][len] == 0) {
+				// TODO: report error if no more argument
+				argi += 1;
+				cfgopt_{{name}}_parse_{{flag.type.name()}}(
+					&cfg->cfg_{{flag.name}},
+					argv[argvi]
+				);
+				continue;
+			} else if (argv[argi][len] == '=') {
+				cfgopt_{{name}}_parse_{{flag.type.name()}}(
+					&cfg->cfg_{{flag.name}},
+					argv[argvi] + len + 1,
+				);
+				continue;
+			}
+		}
+		{%- endfor %}
+
+		// TODO: Report error for undefined flag.
+	}
+}
+#endif // CFGOPT_IMPL_{{name}}
+
+#endif // CFGOPT_{{name}}_H_
