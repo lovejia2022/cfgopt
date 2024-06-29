@@ -66,15 +66,13 @@ struct Flag {
 }
 
 #[derive(Template, Serialize, Deserialize, Debug)]
-#[template(path = "app.txt")]
+#[template(path = "c.txt")]
 struct App {
     name: String,
     version: Option<String>,
     about: Option<String>,
     flags: Vec<Flag>,
 }
-
-impl App {}
 
 fn main() -> Result<()> {
     let cfg = std::fs::read_to_string("cfgopt.toml").unwrap();

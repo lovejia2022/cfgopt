@@ -1,4 +1,4 @@
-#define CFGOPT_IMPL_ls
+#define CFGOPT_IMPL
 #include "cfgopt_gen.h"
 
 int main(int argc, char **argv) {
