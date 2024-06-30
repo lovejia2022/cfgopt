@@ -1,33 +1,24 @@
-name = "ls"
+name = "sample"
 version = "0.1.0"
 
 [[flags]]
-name = "long"
-type = "Bool"
-help = "use a long listing format"
-alias = ["l"]
+name = "boolean_flag"
+type = "boolean"
+help = "boolean flag sample"
 
 [[flags]]
-name = "dereference"
-type = "Bool"
-help = """
-  when showing file information for a symlink, show information for file the
-  link reference rather then for the link itself.
-"""
-alias = ["L"]
-
-[[flags]]
-name = "literal"
-type = "Bool"
-help = "print entry names without quoting"
-alias = ["N"]
-
-[[flags]]
-name = "block_size"
-value_name = "SIZE"
-type = "I64"
+name = "int64_flag"
+type = "int64"
 default = "1024"
-help = """
-  with -l, scale sizes by SIZE when printing them; e.g., '--block-size=M'; see
-  SIZE format below
-"""
+help = "int64 flag sample"
+
+[[flags]]
+name = "float64_flag"
+type = "float64"
+default = "1024"
+help = "int64 flag sample"
+
+[[flags]]
+name = "string_flag"
+type = "string"
+help = "string flag sample"

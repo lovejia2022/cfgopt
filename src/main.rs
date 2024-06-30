@@ -6,40 +6,41 @@ use serde::{Deserialize, Serialize};
 type Result<T> = std::result::Result<T, ()>;
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
 enum FlagType {
-    Bool,
-    I64,
-    F64,
-    Str,
+    Boolean,
+    Int64,
+    Float64,
+    String,
 }
 
 impl FlagType {
     fn c_type(&self) -> String {
         match self {
-            FlagType::Bool => "bool",
-            FlagType::I64 => "int64_t",
-            FlagType::F64 => "double",
-            FlagType::Str => "char const *",
+            FlagType::Boolean => "bool",
+            FlagType::Int64 => "int64_t",
+            FlagType::Float64 => "double",
+            FlagType::String => "char const *",
         }
         .to_owned()
     }
 
     fn c_default(&self) -> String {
         match self {
-            FlagType::Bool => "false",
-            FlagType::I64 => "0",
-            FlagType::F64 => "0.0",
-            FlagType::Str => "NULL",
+            FlagType::Boolean => "false",
+            FlagType::Int64 => "0",
+            FlagType::Float64 => "0.0",
+            FlagType::String => "NULL",
         }
         .to_owned()
     }
 
     fn name(&self) -> String {
         match self {
-            FlagType::Bool => "bool",
-            FlagType::I64 => "int64",
-            FlagType::F64 => "float64",
-            FlagType::Str => "string",
+            FlagType::Boolean => "boolean",
+            FlagType::Int64 => "int64",
+            FlagType::Float64 => "float64",
+            FlagType::String => "string",
         }
         .to_owned()
     }
