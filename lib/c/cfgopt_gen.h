@@ -5,8 +5,8 @@ This is both header and source file. Define CFGOPT_IMPL before include
 this header file makes this a source file.
 */
 
-#ifndef CFGOPT_{{name}}_H_
-#define CFGOPT_{{name}}_H_
+#ifndef CFGOPT_sample_H_
+#define CFGOPT_sample_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,9 +14,10 @@ this header file makes this a source file.
 #include "cfgopt.h"
 
 struct cfgopt_args {
-	{%- for flag in flags %}
-	{{ flag.type.c_type() }} cfg_{{flag.name}};
-	{%- endfor %}
+	bool cfg_boolean_flag;
+	int64_t cfg_int64_flag;
+	double cfg_float64_flag;
+	char const * cfg_string_flag;
 };
 
 void cfgopt_args_init(struct cfgopt_args * cfg);
@@ -26,7 +27,7 @@ struct cfgopt_result cfgopt_args_parse(
 	int argc,
 	char const **argv);
 
-#endif // CFGOPT_{{name}}_H_
+#endif // CFGOPT_sample_H_
 
 #ifdef CFGOPT_IMPL
 
@@ -37,9 +38,10 @@ struct cfgopt_result cfgopt_args_parse(
 
 void cfgopt_args_init(struct cfgopt_args * cfg)
 {
-	{%- for flag in flags %}
-	cfg->cfg_{{flag.name}} = {{flag.type.c_default()}};
-	{%- endfor %}
+	cfg->cfg_boolean_flag = false;
+	cfg->cfg_int64_flag = 0;
+	cfg->cfg_float64_flag = 0.0;
+	cfg->cfg_string_flag = NULL;
 }
 
 struct cfgopt_result cfgopt_args_parse(
@@ -48,17 +50,30 @@ struct cfgopt_result cfgopt_args_parse(
 	char const **argv)
 {
 	struct flag_info flag_infos[] = {
-		{%- for flag in flags %}
 		{
-			.name = "{{flag.name}}",
-			.type = FLAG_{{flag.type.name().to_ascii_uppercase()}},
-			.value = &cfg->cfg_{{flag.name}}
+			.name = "boolean_flag",
+			.type = FLAG_BOOLEAN,
+			.value = &cfg->cfg_boolean_flag
 		},
-		{%- endfor %}
+		{
+			.name = "int64_flag",
+			.type = FLAG_INT64,
+			.value = &cfg->cfg_int64_flag
+		},
+		{
+			.name = "float64_flag",
+			.type = FLAG_FLOAT64,
+			.value = &cfg->cfg_float64_flag
+		},
+		{
+			.name = "string_flag",
+			.type = FLAG_STRING,
+			.value = &cfg->cfg_string_flag
+		},
 	};
 
 	struct parser p = new_parser(argv, argc);
-	return parse(&p, flag_infos, {{flags.len()}});
+	return parse(&p, flag_infos, 4);
 }
 
 #endif // CFGOPT_IMPL

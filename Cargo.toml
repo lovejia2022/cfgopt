@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 askama = "0.12.1"
+clap = { version = "4.5.8", default-features = false, features = ["derive", "help", "std", "usage", "suggestions", "cargo"] }
 serde = { version = "1.0.203", features = ["derive"] }
 toml = "0.8.14"

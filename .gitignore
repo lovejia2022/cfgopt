@@ -1,2 +1,4 @@
 /target
-main
+/main
+/.cache
+/compile_commands.json

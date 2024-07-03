@@ -5,9 +5,11 @@ version = "0.1.0"
 name = "boolean_flag"
 type = "boolean"
 help = "boolean flag sample"
+short = "b"
 
 [[flags]]
 name = "int64_flag"
+short = "i"
 type = "int64"
 default = "1024"
 help = "int64 flag sample"
@@ -17,8 +19,10 @@ name = "float64_flag"
 type = "float64"
 default = "1024"
 help = "int64 flag sample"
+short = "f"
 
 [[flags]]
 name = "string_flag"
 type = "string"
 help = "string flag sample"
+short = "s"

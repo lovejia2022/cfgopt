@@ -1,8 +1,15 @@
 # Development tasks
 
-## test
+## c-test
+
+> Run test of C.
 
 ```sh
-cargo r
-cc -o main main.c
+set -ex
+
+cargo r -- --language=c lib/c/cfgopt_gen.h
+
+cd lib/c/
+make
+./cfgopt_test
 ```

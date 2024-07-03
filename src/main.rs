@@ -1,6 +1,9 @@
-use askama::Template;
-use std::{fs::File, io::Write};
+use std::path::Path;
+use std::{fs::File, io::Write, path::PathBuf};
 
+use askama::Template;
+use clap::Parser;
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
 type Result<T> = std::result::Result<T, ()>;
@@ -57,7 +60,7 @@ struct Flag {
     value_name: Option<String>,
 
     #[serde(default)]
-    alias: Vec<String>,
+    short: char,
 
     #[serde(default)]
     default: Option<String>,
@@ -75,12 +78,42 @@ struct App {
     flags: Vec<Flag>,
 }
 
-fn main() -> Result<()> {
-    let cfg = std::fs::read_to_string("cfgopt.toml").unwrap();
-    let app: App = toml::from_str(&cfg).unwrap();
+#[derive(Clone, Copy, ValueEnum)]
+enum Language {
+    C,
+}
 
-    let mut fout = File::create("cfgopt_gen.h").unwrap();
-    write!(&mut fout, "{}", app.render().unwrap()).unwrap();
+#[derive(Parser)]
+struct CommandLine {
+    #[clap(short, long)]
+    config: Option<PathBuf>,
+
+    #[clap(short, long)]
+    language: Language,
+
+    output: PathBuf,
+}
+
+fn main() -> Result<()> {
+    let cli = CommandLine::parse();
+
+    let config = cli
+        .config
+        .as_ref()
+        .map(PathBuf::as_path)
+        .unwrap_or_else(|| Path::new("cfgopt.toml"));
+
+    let cfg = std::fs::read_to_string(config)
+        .map_err(|err| eprintln!("cfgopt: Failed to open config file {config:?}: {err}"))?;
+
+    let app: App = toml::from_str(&cfg)
+        .map_err(|err| eprintln!("cfgopt: Failed to parse config file {config:?}: {err}"))?;
+
+    let mut fout =
+        File::create(&cli.output).map_err(|err| eprintln!("cfgopt: Failed write output: {err}"))?;
+
+    write!(&mut fout, "{}", app.render().unwrap())
+        .map_err(|err| eprintln!("cfgopt: Failed write output: {err}"))?;
 
     Ok(())
 }
