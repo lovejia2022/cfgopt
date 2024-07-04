@@ -158,7 +158,7 @@ struct cfgopt_string_array {
 
 #endif /* CFGOPT_H_ */
 
-/* Starts of implemention of libcfgopt. User should use symbols after. */
+/* Starts of implemention of libcfgopt. User should not use symbols after. */
 
 #ifdef CFGOPT_IMPL
 
