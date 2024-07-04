@@ -15,3 +15,20 @@ parse that command line argument.
 This read "./cfgopt.toml" and generate "lib/c/cfgopt_gen.h". Include this file
 to your application to parse command line arguments. lib/c/cfgopt_test.c is a
 example to use that parser.
+
+## TODO
+
+- [ ] Package and release.
+- Interface:
+	- [ ] Read command line arguments from file.
+	- [ ] Read command line arguments from environment variables.
+	- [ ] Generate help.
+- Parser:
+	- [ ] Parse short flags.
+	- [ ] Parse positonal arguments.
+- Support more languages:
+	- [ ] C++
+	- [ ] Rust
+	- [ ] Python
+	- [ ] Go
+	- [ ] POSIX shell
