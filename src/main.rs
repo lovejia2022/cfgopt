@@ -17,37 +17,7 @@ enum FlagType {
     String,
 }
 
-impl FlagType {
-    fn c_type(&self) -> String {
-        match self {
-            FlagType::Boolean => "bool",
-            FlagType::Int64 => "int64_t",
-            FlagType::Float64 => "double",
-            FlagType::String => "char const *",
-        }
-        .to_owned()
-    }
-
-    fn c_default(&self) -> String {
-        match self {
-            FlagType::Boolean => "false",
-            FlagType::Int64 => "0",
-            FlagType::Float64 => "0.0",
-            FlagType::String => "NULL",
-        }
-        .to_owned()
-    }
-
-    fn name(&self) -> String {
-        match self {
-            FlagType::Boolean => "boolean",
-            FlagType::Int64 => "int64",
-            FlagType::Float64 => "float64",
-            FlagType::String => "string",
-        }
-        .to_owned()
-    }
-}
+impl FlagType {}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -55,6 +25,9 @@ struct Flag {
     name: String,
     r#type: FlagType,
     help: String,
+
+    #[serde(default)]
+    multiple: bool,
 
     #[serde(default)]
     value_name: Option<String>,
@@ -67,6 +40,60 @@ struct Flag {
 
     #[serde(default)]
     env: Option<String>,
+}
+
+impl Flag {
+    fn type_name(&self) -> String {
+        if self.multiple {
+            match self.r#type {
+                FlagType::Boolean => "boolean_array",
+                FlagType::Int64 => "int64_array",
+                FlagType::Float64 => "float64_array",
+                FlagType::String => "string_array",
+            }
+        } else {
+            match self.r#type {
+                FlagType::Boolean => "boolean",
+                FlagType::Int64 => "int64",
+                FlagType::Float64 => "float64",
+                FlagType::String => "string",
+            }
+        }
+        .to_owned()
+    }
+
+    fn c_type(&self) -> String {
+        if self.multiple {
+            match self.r#type {
+                FlagType::Boolean => "struct cfgopt_boolean_array",
+                FlagType::Int64 => "struct cfgopt_int64_array",
+                FlagType::Float64 => "struct cfgopt_float64_array",
+                FlagType::String => "struct cfgopt_string_array",
+            }
+        } else {
+            match self.r#type {
+                FlagType::Boolean => "bool",
+                FlagType::Int64 => "int64_t",
+                FlagType::Float64 => "double",
+                FlagType::String => "char const *",
+            }
+        }
+        .to_owned()
+    }
+
+    fn c_default(&self) -> String {
+        if self.multiple {
+            format!("({}) cfgopt_array_init()", self.c_type())
+        } else {
+            match self.r#type {
+                FlagType::Boolean => "false",
+                FlagType::Int64 => "0",
+                FlagType::Float64 => "0.0",
+                FlagType::String => "NULL",
+            }
+            .to_owned()
+        }
+    }
 }
 
 #[derive(Template, Serialize, Deserialize, Debug)]

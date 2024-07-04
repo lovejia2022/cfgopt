@@ -8,6 +8,12 @@ help = "boolean flag sample"
 short = "b"
 
 [[flags]]
+name = "boolean_array"
+type = "boolean"
+multiple = true
+help = "boolean array sample"
+
+[[flags]]
 name = "int64_flag"
 short = "i"
 type = "int64"

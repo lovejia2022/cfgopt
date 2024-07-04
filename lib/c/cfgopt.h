@@ -1,17 +1,28 @@
-/*
-libcfgopt - support library for generated code of cfgopt.
-
-This is a header only library, get implemention define CFGOPT_IMPL before
-include this file.
-*/
+/* libcfgopt - support library for generated code of cfgopt.
+ *
+ * This is a header only library, get implemention by define CFGOPT_IMPL before
+ * include this file.
+ *
+ * If you define CFGOPT_CONFIG_LOG with CFGOPT_IMPL, libcfgopt will print logs
+ * to show how arguments is parsed, just for development.
+ *
+ * cfgopt will generate a header file contains "struct cfgopt_args" and a list
+ * of functions to use that struct. The generated header file will include this
+ * library by name "cfgopt.h" to make generated code works. So in the workspace
+ * you use the generated header, you should add this into the header serach path
+ * list. For example add "-I<path/to/parent/of/cfgopt.h>" to command arguments
+ * for gcc and clang.
+ */
 
 #ifndef CFGOPT_H_
 #define CFGOPT_H_
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdbool.h> // bool
+#include <stddef.h>  // size_t
+#include <stdint.h>  // int64_t
+#include <stdio.h>   // FILE
 
+/* Type of result type of functions, used in struct cfgopt_result. */
 enum cfgopt_result_type {
 	CFGOPT_OK = 0,
 	CFGOPT_TODO,
@@ -20,12 +31,13 @@ enum cfgopt_result_type {
 	CFGOPT_SYNTAX_ERROR,
 };
 
-/* Can't parse `text` as `type`. */
+/* Can't parse `text` as `type`. This is part of result type. */
 struct cfgopt_syntax_error {
 	char const *type;
 	char const *text;
 };
 
+/* Result infomation for functions. */
 struct cfgopt_result {
 	enum cfgopt_result_type type;
 	union {
@@ -34,54 +46,128 @@ struct cfgopt_result {
 	} u;
 };
 
+/* Create a result for success. */
 static inline struct cfgopt_result cfgopt_ok()
 {
 	return (struct cfgopt_result){.type = CFGOPT_OK};
 }
 
+/* Create a result for undefined flag error. */
 static inline struct cfgopt_result cfgopt_new_undefined_flag(char const *name)
 {
 	return (struct cfgopt_result){.type = CFGOPT_UNDEFINED_FLAG,
-				      .u.name = name};
+	                              .u.name = name};
 }
 
+/* Create a result for missing value error. This occurs when find a
+ * non-boolean flag in the command line arguments and can't find a value to
+ * that flag.
+ */
 static inline struct cfgopt_result
 cfgopt_new_missing_value_error(char const *name)
 {
 	return (struct cfgopt_result){.type = CFGOPT_MISSING_VALUE,
-				      .u.name = name};
+	                              .u.name = name};
 }
 
+/* Create a result for syntax error. This means argument string of a flag value
+ * can't be parsed as the type of the flag.
+ */
 static inline struct cfgopt_result cfgopt_new_syntax_error(char const *type,
-							   char const *text)
+                                                           char const *text)
 {
 	return (struct cfgopt_result){
-		.type = CFGOPT_SYNTAX_ERROR,
-		.u.syntax_error.type = type,
-		.u.syntax_error.text = text,
+	        .type = CFGOPT_SYNTAX_ERROR,
+	        .u.syntax_error.type = type,
+	        .u.syntax_error.text = text,
 	};
 }
 
+/* Print the result to a file. The printed text looks like "Ok" or
+ * "Can't parse 12.0 as boolean", without newline at the end.
+ */
 void cfgopt_print_result(struct cfgopt_result *r, FILE *file);
 
-#ifndef CFGOPT_FATAL_EXIT
-#define CFGOPT_FATAL_EXIT 1
-#endif // CFGOPT_FATAL_EXIT
+/* A list of array types for flags with "multiple = true", each array contains
+ * pointer "data" to the starts of memory of values, length of current array
+ * "len", and "cap" for the array capacity.
+ *
+ * Array should be init by assign it to "cfgopt_array_init()". User should call
+ * "cfgopt_array_drop(&array)" to cleanup that array.
+ *
+ * If "array.data" is not NULL, user can use "array.data[i]" if
+ * 0 <= i < array.len.
+ *
+ * Note that the generate function "cfgopt_arg_init" and "cfgopt_arg_drop" will
+ * do those init and drop for you.
+ */
 
-static inline void cfgopt_fatal(char const *message)
-{
-	fprintf(stderr, "cfgopt: %s\n", message);
-	exit(CFGOPT_FATAL_EXIT);
-}
+struct cfgopt_int64_array {
+	int64_t *data;
+	size_t len;
+	size_t cap;
+};
+
+struct cfgopt_float64_array {
+	double *data;
+	size_t len;
+	size_t cap;
+};
+
+struct cfgopt_boolean_array {
+	bool *data;
+	size_t len;
+	size_t cap;
+};
+
+struct cfgopt_string_array {
+	char const **data;
+	size_t len;
+	size_t cap;
+};
+
+/* Initialize list of array. */
+#define cfgopt_array_init()                                                    \
+	{                                                                      \
+		.data = NULL, .len = 0, .cap = 0                               \
+	}
+
+/* Drop array A, make sure A is initialized. */
+#define cfgopt_array_drop(A) cfgopt_array_drop_((A))
+#define cfgopt_array_drop_(A)                                                  \
+	do {                                                                   \
+		if (A->data != NULL) {                                         \
+			free(A->data);                                         \
+			A->data = NULL;                                        \
+		}                                                              \
+		A->len = 0;                                                    \
+		A->cap = 0;                                                    \
+	} while (0)
+
+/* Append X to the rear of array A, make sure A is initialized. */
+#define cfgopt_append(A, X) cfgopt_append_((A), (X))
+#define cfgopt_append_(A, X)                                                   \
+	do {                                                                   \
+		if (A.len >= A.cap) {                                          \
+			A.cap = A.cap == 0 ? 8 : A.cap * 2;                    \
+			A.data = realloc(A.data, sizeof(*A.data) * A.cap);     \
+		}                                                              \
+		A.data[A.len] = X;                                             \
+		A.len += 1;                                                    \
+	} while (0)
 
 #endif /* CFGOPT_H_ */
 
+/* Starts of implemention of libcfgopt. User should use symbols after. */
+
 #ifdef CFGOPT_IMPL
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdbool.h> // bool
+#include <stddef.h>  // size_t
+#include <stdint.h>  // int64_t
+#include <stdio.h>   // fprintf, FILE
+#include <stdlib.h>  // strtoll, strtod
+#include <string.h>  // strcmp
 
 #ifdef CFGOPT_CONFIG_LOG
 #define logging(...)                                                           \
@@ -95,6 +181,11 @@ static inline void cfgopt_fatal(char const *message)
 #define logging(...)
 #endif
 
+static struct cfgopt_result todo()
+{
+	return (struct cfgopt_result){.type = CFGOPT_TODO};
+}
+
 void cfgopt_print_result(struct cfgopt_result *r, FILE *file)
 {
 	switch (r->type) {
@@ -106,15 +197,15 @@ void cfgopt_print_result(struct cfgopt_result *r, FILE *file)
 		break;
 	case CFGOPT_MISSING_VALUE:
 		fprintf(file,
-			"Flag ``%s'' need a value, use ``-FLAG=VALUE'' or "
-			"``-FLAG VALUE''",
-			r->u.name);
+		        "Flag ``%s'' need a value, use ``-FLAG=VALUE'' or "
+		        "``-FLAG VALUE''",
+		        r->u.name);
 		break;
 	case CFGOPT_SYNTAX_ERROR:
 		fprintf(file,
-			"Can't parse ``%s'' as %s",
-			r->u.syntax_error.text,
-			r->u.syntax_error.type);
+		        "Can't parse ``%s'' as %s",
+		        r->u.syntax_error.text,
+		        r->u.syntax_error.type);
 		break;
 	case CFGOPT_TODO:
 		fprintf(file, "Not implemented");
@@ -156,7 +247,7 @@ static struct cfgopt_result parse_boolean(char const *arg, bool *out)
 	}
 
 	if (strcmp(arg, "false") == 0) {
-		*out = true;
+		*out = false;
 		goto ok;
 	}
 
@@ -174,12 +265,20 @@ enum flag_type {
 	FLAG_BOOLEAN,
 	FLAG_FLOAT64,
 	FLAG_STRING,
+
+	FLAG_INT64_ARRAY,
+	FLAG_BOOLEAN_ARRAY,
+	FLAG_FLOAT64_ARRAY,
+	FLAG_STRING_ARRAY,
 };
 
 static struct cfgopt_result parse_flag_value(enum flag_type flag_type,
-					     char const *flag_value,
-					     void *flag_value_out)
+                                             char const *flag_value,
+                                             void *flag_value_out)
 {
+	bool boolean_tmp;
+	struct cfgopt_result r;
+
 	switch (flag_type) {
 	case FLAG_BOOLEAN:
 		return parse_boolean(flag_value, (bool *)flag_value_out);
@@ -189,14 +288,22 @@ static struct cfgopt_result parse_flag_value(enum flag_type flag_type,
 		return parse_float64(flag_value, (double *)flag_value_out);
 	case FLAG_STRING:
 		return parse_string(flag_value, (char const **)flag_value_out);
-	}
+	case FLAG_BOOLEAN_ARRAY:
+		r = parse_boolean(flag_value, &boolean_tmp);
 
-	return cfgopt_ok();
+		if (r.type == CFGOPT_OK) {
+			cfgopt_append(
+			        *(struct cfgopt_boolean_array *)flag_value_out,
+			        boolean_tmp);
+		}
+		return r;
+	default:
+		return todo();
+	}
 }
 
 struct flag_info {
 	char const *name;
-	// size_t len;
 	char short_name;
 
 	enum flag_type type;
@@ -209,7 +316,7 @@ struct parser {
 	size_t curr_arg;
 	size_t curr_pos;
 
-	/* Result of try_all_flags_on_args */
+	/* Result of try_all_flags_on_arg. */
 
 	char const *flag_value;
 	int cost_args;
@@ -241,8 +348,8 @@ static bool try_flag_on_arg(struct parser *p, struct flag_info const *flag)
 	for (i = 0; flag->name[i] != '\0'; ++i) {
 		if (flag->name[i] != arg[i]) {
 			logging("flag name mismatch: %s vs %s",
-				flag->name,
-				arg);
+			        flag->name,
+			        arg);
 			return false;
 		}
 	}
@@ -254,6 +361,9 @@ static bool try_flag_on_arg(struct parser *p, struct flag_info const *flag)
 
 			p->flag_value = p->args[p->curr_arg + 1];
 			p->cost_args = 2;
+		} else {
+			p->flag_value = "true";
+			p->cost_args = 1;
 		}
 	} else if (arg[i] == '=') {
 		/* NAME=VALUE */
@@ -267,8 +377,8 @@ static bool try_flag_on_arg(struct parser *p, struct flag_info const *flag)
 }
 
 static struct cfgopt_result try_all_flags_on_arg(struct parser *p,
-						 struct flag_info const *flags,
-						 size_t flag_count)
+                                                 struct flag_info const *flags,
+                                                 size_t flag_count)
 {
 	size_t i;
 
@@ -282,8 +392,8 @@ static struct cfgopt_result try_all_flags_on_arg(struct parser *p,
 		p->matched_flag = flags + i;
 
 		parse_flag_value(p->matched_flag->type,
-				 p->flag_value,
-				 p->matched_flag->value);
+		                 p->flag_value,
+		                 p->matched_flag->value);
 
 		p->curr_arg += p->cost_args;
 		p->curr_pos = 0;
@@ -291,11 +401,6 @@ static struct cfgopt_result try_all_flags_on_arg(struct parser *p,
 	}
 
 	return cfgopt_new_undefined_flag(p->args[p->curr_arg] + p->curr_pos);
-}
-
-static struct cfgopt_result todo()
-{
-	return (struct cfgopt_result){.type = CFGOPT_TODO};
 }
 
 static struct cfgopt_result
