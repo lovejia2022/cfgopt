@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+for OPTION; do
+	case "$OPTION" in
+		-c | --configure)
+			./scripts/c-configure;;
+		-g | --generate)
+			cargo r -- --language=c lib/c/tests/cfgopt_gen.h;;
+		*)
+			break;;
+	esac
+done
+
+cd lib/c/
+
+cmake --build build
+./build/cfgopt_test

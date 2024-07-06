@@ -19,13 +19,13 @@ example to use that parser.
 ## TODO
 
 - [ ] Package and release.
+- Parser:
+	- [ ] Parse short flags.
+	- [ ] Parse positonal arguments.
 - Interface:
 	- [ ] Read command line arguments from file.
 	- [ ] Read command line arguments from environment variables.
 	- [ ] Generate help.
-- Parser:
-	- [ ] Parse short flags.
-	- [ ] Parse positonal arguments.
 - Support more languages:
 	- [ ] C++
 	- [ ] Rust

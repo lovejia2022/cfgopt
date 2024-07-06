@@ -2,4 +2,5 @@
 /main
 /.cache
 /compile_commands.json
+/.helix
 *.dSYM/
