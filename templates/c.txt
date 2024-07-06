@@ -4,8 +4,8 @@
  * this header file makes this a source file.
  */
 
-#ifndef CFGOPT_{{name}}_H_
-#define CFGOPT_{{name}}_H_
+#ifndef CFGOPT_GEN_{{name}}_H_
+#define CFGOPT_GEN_{{name}}_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,6 +22,9 @@ struct cfgopt_args {
 /* Initilize cfgopt_args. */
 void cfgopt_args_init(struct cfgopt_args *cfg);
 
+/* Print help of `cfg` to `fp` */
+void cfgopt_args_print_help(FILE *fp);
+
 /* Drop "cfg", make "cfg" is initialized. */
 void cfgopt_args_drop(struct cfgopt_args *cfg);
 
@@ -33,7 +36,7 @@ struct cfgopt_result cfgopt_args_parse(
 	int argc,
 	char const **argv);
 
-#endif // CFGOPT_{{name}}_H_
+#endif // CFGOPT_GEN_{{name}}_H_
 
 /* End of header part and starts of implementions, define CFGOPT_IMPL to open
  * it.
@@ -45,6 +48,17 @@ struct cfgopt_result cfgopt_args_parse(
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+void cfgopt_args_print_help(FILE *fp)
+{
+	fprintf(
+		fp,
+		"Flags:\n"
+{%- for flag in flags %}
+		"  {{flag.flag_help()}}\n"
+{%- endfor %}
+	);
+}
 
 void cfgopt_args_init(struct cfgopt_args *cfg)
 {
@@ -65,22 +79,29 @@ void cfgopt_args_drop(struct cfgopt_args *cfg)
 }
 
 struct cfgopt_result cfgopt_args_parse(
-	struct cfgopt_args * cfg,
+	struct cfgopt_args *cfg,
 	int argc,
 	char const **argv)
 {
-	struct flag_info flag_infos[] = {
-		{%- for flag in flags %}
+	struct cfgopt_flag_info flag_infos[] = {
+{%- for flag in flags %}
 		{
 			.name = "{{flag.name}}",
 			.type = FLAG_{{flag.type_name().to_ascii_uppercase()}},
 			.value = &cfg->cfg_{{flag.name}}
 		},
-		{%- endfor %}
+{%- endfor %}
 	};
 
-	struct parser p = new_parser(argv, argc);
-	return parse(&p, flag_infos, {{flags.len()}});
+	struct cfgopt_parser p = cfgopt_new_parser(argv, argc);
+	struct cfgopt_result r = cfgopt_parse(&p, flag_infos, {{flags.len()}});
+
+{%- if !no_auto_help %}
+	if (cfg->cfg_help) {
+		cfgopt_print_help(cfg, help);
+		exit(0);
+	}
+{%- endif %}
 }
 
 #endif // CFGOPT_IMPL

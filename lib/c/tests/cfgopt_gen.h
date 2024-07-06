@@ -4,8 +4,8 @@
  * this header file makes this a source file.
  */
 
-#ifndef CFGOPT_sample_H_
-#define CFGOPT_sample_H_
+#ifndef CFGOPT_GEN_sample_H_
+#define CFGOPT_GEN_sample_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -24,6 +24,9 @@ struct cfgopt_args {
 /* Initilize cfgopt_args. */
 void cfgopt_args_init(struct cfgopt_args *cfg);
 
+/* Print help of `cfg` to `fp` */
+void cfgopt_args_print_help(struct cfgopt_args *cfg, FILE *fp);
+
 /* Drop "cfg", make "cfg" is initialized. */
 void cfgopt_args_drop(struct cfgopt_args *cfg);
 
@@ -35,7 +38,7 @@ struct cfgopt_result cfgopt_args_parse(
 	int argc,
 	char const **argv);
 
-#endif // CFGOPT_sample_H_
+#endif // CFGOPT_GEN_sample_H_
 
 /* End of header part and starts of implementions, define CFGOPT_IMPL to open
  * it.
@@ -47,6 +50,19 @@ struct cfgopt_result cfgopt_args_parse(
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+void cfgopt_args_print_help(struct cfgopt_args *cfg, FILE *fp)
+{
+	fprintf(
+		fp,
+		"Flags:\n"
+		"  -b, --boolean_flag (boolean)  boolean flag sample\n"
+		"  --boolean_array (boolean_array)  boolean array sample\n"
+		"  -i, --int64_flag (int64) default: 1024, int64 flag sample\n"
+		"  -f, --float64_flag (float64) default: 1024, int64 flag sample\n"
+		"  -s, --string_flag (string)  string flag sample\n"
+	);
+}
 
 void cfgopt_args_init(struct cfgopt_args *cfg)
 {
@@ -71,7 +87,7 @@ struct cfgopt_result cfgopt_args_parse(
 	int argc,
 	char const **argv)
 {
-	struct flag_info flag_infos[] = {
+	struct cfgopt_flag_info flag_infos[] = {
 		{
 			.name = "boolean_flag",
 			.type = FLAG_BOOLEAN,
@@ -99,8 +115,8 @@ struct cfgopt_result cfgopt_args_parse(
 		},
 	};
 
-	struct parser p = new_parser(argv, argc);
-	return parse(&p, flag_infos, 5);
+	struct cfgopt_parser p = cfgopt_new_parser(argv, argc);
+	return cfgopt_parse(&p, flag_infos, 5);
 }
 
 #endif // CFGOPT_IMPL

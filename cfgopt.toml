@@ -1,5 +1,6 @@
 name = "sample"
 version = "0.1.0"
+no-auto-help = false
 
 [[flags]]
 name = "boolean_flag"

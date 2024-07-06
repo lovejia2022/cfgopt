@@ -10,17 +10,7 @@
 #include <stdlib.h>  // strtoll, strtod
 #include <string.h>  // strcmp
 
-#ifdef CFGOPT_CONFIG_LOG
-#define logging(...)                                                           \
-	do {                                                                   \
-		fprintf(stderr, "# ");                                         \
-		fprintf(stderr, __VA_ARGS__);                                  \
-		fprintf(stderr, "\n");                                         \
-		fflush(stderr);                                                \
-	} while (0)
-#else
-#define logging(...)
-#endif
+#include "cfgopt_inner.h"
 
 static struct cfgopt_result todo()
 {
@@ -101,19 +91,7 @@ ok:
 	return r;
 }
 
-enum flag_type {
-	FLAG_INT64,
-	FLAG_BOOLEAN,
-	FLAG_FLOAT64,
-	FLAG_STRING,
-
-	FLAG_INT64_ARRAY,
-	FLAG_BOOLEAN_ARRAY,
-	FLAG_FLOAT64_ARRAY,
-	FLAG_STRING_ARRAY,
-};
-
-static struct cfgopt_result parse_flag_value(enum flag_type flag_type,
+static struct cfgopt_result parse_flag_value(enum cfgopt_flag_type flag_type,
                                              char const *flag_value,
                                              void *flag_value_out)
 {
@@ -143,30 +121,9 @@ static struct cfgopt_result parse_flag_value(enum flag_type flag_type,
 	}
 }
 
-struct flag_info {
-	char const *name;
-	char short_name;
-
-	enum flag_type type;
-	void *value;
-};
-
-struct parser {
-	char const **args;
-	size_t argc;
-	size_t curr_arg;
-	size_t curr_pos;
-
-	/* Result of try_all_flags_on_arg. */
-
-	char const *flag_value;
-	int cost_args;
-	struct flag_info const *matched_flag;
-};
-
-struct parser new_parser(char const **args, size_t argc)
+struct cfgopt_parser cfgopt_new_parser(char const **args, size_t argc)
 {
-	struct parser iter;
+	struct cfgopt_parser iter;
 	iter.args = args;
 	iter.argc = argc;
 	iter.curr_arg = 1;
@@ -176,12 +133,13 @@ struct parser new_parser(char const **args, size_t argc)
 	return iter;
 }
 
-static char const *parser_current_arg(struct parser *p)
+static char const *parser_current_arg(struct cfgopt_parser *p)
 {
 	return p->args[p->curr_arg] + p->curr_pos;
 }
 
-static bool try_flag_on_arg(struct parser *p, struct flag_info const *flag)
+static bool try_flag_on_arg(struct cfgopt_parser *p,
+                            struct cfgopt_flag_info const *flag)
 {
 	char const *arg = parser_current_arg(p);
 	size_t i;
@@ -217,9 +175,10 @@ static bool try_flag_on_arg(struct parser *p, struct flag_info const *flag)
 	return true;
 }
 
-static struct cfgopt_result try_all_flags_on_arg(struct parser *p,
-                                                 struct flag_info const *flags,
-                                                 size_t flag_count)
+static struct cfgopt_result
+try_all_flags_on_arg(struct cfgopt_parser *p,
+                     struct cfgopt_flag_info const *flags,
+                     size_t flag_count)
 {
 	size_t i;
 
@@ -244,8 +203,9 @@ static struct cfgopt_result try_all_flags_on_arg(struct parser *p,
 	return cfgopt_new_undefined_flag(p->args[p->curr_arg] + p->curr_pos);
 }
 
-static struct cfgopt_result
-parse(struct parser *p, struct flag_info const *flags, size_t flag_count)
+struct cfgopt_result cfgopt_parse(struct cfgopt_parser *p,
+                                  struct cfgopt_flag_info const *flags,
+                                  size_t flag_count)
 {
 	while (p->curr_arg < p->argc) {
 		char const *arg = p->args[p->curr_arg];

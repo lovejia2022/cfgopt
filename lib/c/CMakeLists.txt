@@ -22,6 +22,11 @@ if(CFGOPT_build_test)
   add_executable(cfgopt_test tests/cfgopt_test.c)
   target_link_libraries(cfgopt_test PRIVATE cfgopt)
 
+  target_include_directories(cfgopt_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/src
+  )
+
   add_executable(cfgopt_example tests/cfgopt_example.c)
   target_link_libraries(cfgopt_example PRIVATE cfgopt)
 endif()
