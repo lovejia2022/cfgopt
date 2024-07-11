@@ -1,7 +1,0 @@
-#!/bin/sh
-
-set -e
-
-cd lib/c/
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCFGOPT_log=ON -Bbuild
-ln -sf build/compile_commands.json .

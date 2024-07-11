@@ -2,18 +2,97 @@
 
 set -e
 
-for OPTION; do
-	case "$OPTION" in
-		-c | --configure)
-			./scripts/c-configure;;
-		-g | --generate)
-			cargo r -- --language=c lib/c/tests/cfgopt_gen.h;;
-		*)
-			break;;
+OPT_log=f
+OPT_configure=f
+OPT_generate=f
+OPT_clean=f
+OPT_help=f
+
+is_flag_on() {
+	case "$1" in
+	t) return 0 ;;
+	f) return 1 ;;
+	*) fatal "Invalid flag value: $1" ;;
 	esac
-done
+}
 
-cd lib/c/
+fatal() {
+	echo "Error: $*" >&2
+	exit 1
+}
 
-cmake --build build
-./build/cfgopt_test
+parse_flags() {
+	for OPTION; do
+		case "$OPTION" in
+		-c | --configure)
+			OPT_configure=t
+			;;
+		-h | --help)
+			OPT_help=t
+			;;
+		--clean)
+			OPT_clean=t
+			OPT_configure=t
+			;;
+		-g | --generate)
+			OPT_generate=t
+			;;
+		--log)
+			OPT_log=t
+			;;
+		*)
+			fatal "Invalid flag: $OPTION"
+			;;
+		esac
+	done
+}
+
+print_help() {
+	printf "\t-c,--configure  Configure cmake before build and test\n"
+	printf "\t-g,--generate   Generate cfgopt_gen.h\n"
+	printf "\t--clean         Clean build directory before build, this implies --configure\n"
+	printf "\t--log           Enable log of libcfgopt\n"
+}
+
+configure() {
+	mkdir -p build
+
+	set -- -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+	if is_flag_on $OPT_log; then
+		set -- "$@" -DCFGOPT_log=ON
+	else
+		set -- "$@" -DCFGOPT_log=OFF
+	fi
+
+	set -- "$@" -Bbuild
+	cmake "$@"
+
+	ln -sf build/compile_commands.json .
+}
+
+main() {
+	parse_flags "$@"
+
+	if is_flag_on $OPT_help; then
+		print_help
+		return
+	fi
+
+	if is_flag_on $OPT_clean; then
+		rm -rf lib/c/build
+	fi
+
+	if is_flag_on $OPT_configure; then
+		(cd lib/c && configure)
+	fi
+
+	if is_flag_on $OPT_generate; then
+		cargo r -- --language=c lib/c/tests/cfgopt_gen.h
+	fi
+
+	(cd lib/c && cmake --build build)
+	./lib/c/build/cfgopt_test
+}
+
+main "$@"

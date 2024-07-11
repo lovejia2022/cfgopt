@@ -14,9 +14,9 @@
 
 /* Command line arguments defined in a cfgopt.toml file. */
 struct cfgopt_args {
-	{%- for flag in flags %}
-	{{ flag.c_type() }} cfg_{{flag.name}};
-	{%- endfor %}
+    {%- for flag in flags %}
+    {{ flag.c_type() }} cfg_{{flag.name}};
+    {%- endfor %}
 };
 
 /* Initilize cfgopt_args. */
@@ -31,10 +31,9 @@ void cfgopt_args_drop(struct cfgopt_args *cfg);
 /* Parse command line arguments, set result to "cfg". "argc" and "argv"
  * usually comes from arguments of the main function.
  */
-struct cfgopt_result cfgopt_args_parse(
-	struct cfgopt_args *cfg,
-	int argc,
-	char const **argv);
+struct cfgopt_result cfgopt_args_parse(struct cfgopt_args *cfg,
+                                       int argc,
+                                       char const **argv);
 
 #endif // CFGOPT_GEN_{{name}}_H_
 
@@ -49,59 +48,64 @@ struct cfgopt_result cfgopt_args_parse(
 #include <stdlib.h>
 #include <string.h>
 
-void cfgopt_args_print_help(FILE *fp)
-{
-	fprintf(
-		fp,
-		"Flags:\n"
+void cfgopt_args_print_help(FILE *fp) {
+    fprintf(
+        fp,
+        "Flags:\n"
 {%- for flag in flags %}
-		"  {{flag.flag_help()}}\n"
+        "  {{flag.flag_help()}}\n"
 {%- endfor %}
-	);
+    );
 }
 
-void cfgopt_args_init(struct cfgopt_args *cfg)
-{
-	{%- for flag in flags %}
-	cfg->cfg_{{flag.name}} = {{flag.c_default()}};
-	{%- endfor %}
+void cfgopt_args_init(struct cfgopt_args *cfg) {
+    {%- for flag in flags %}
+    cfg->cfg_{{flag.name}} = {{flag.c_default()}};
+    {%- endfor %}
 }
 
-void cfgopt_args_drop(struct cfgopt_args *cfg)
-{
-	{%- for flag in flags %}
-		{%- if flag.multiple %}
-	cfgopt_array_drop(&cfg->cfg_{{flag.name}});
-		{%- else %}
-	cfg->cfg_{{flag.name}} = {{flag.c_default()}};
-		{%- endif %}
-	{%- endfor %}
-}
-
-struct cfgopt_result cfgopt_args_parse(
-	struct cfgopt_args *cfg,
-	int argc,
-	char const **argv)
-{
-	struct cfgopt_flag_info flag_infos[] = {
+void cfgopt_args_drop(struct cfgopt_args *cfg) {
 {%- for flag in flags %}
-		{
-			.name = "{{flag.name}}",
-			.type = FLAG_{{flag.type_name().to_ascii_uppercase()}},
-			.value = &cfg->cfg_{{flag.name}}
-		},
+    {%- if flag.multiple %}
+    cfgopt_array_drop(&cfg->cfg_{{flag.name}});
+    {%- else %}
+    cfg->cfg_{{flag.name}} = {{flag.c_default()}};
+    {%- endif %}
 {%- endfor %}
-	};
+}
 
-	struct cfgopt_parser p = cfgopt_new_parser(argv, argc);
-	struct cfgopt_result r = cfgopt_parse(&p, flag_infos, {{flags.len()}});
+#define cfgopt_get_flag_info(cfg) cfgopt_get_flag_info_((cfg))
+#define cfgopt_get_flag_info_(cfg) \
+{ \
+{%- for flag in flags %}
+    { \
+        .name = "{{flag.name}}", \
+        .type = CFGOPT_{{flag.type_name().to_ascii_uppercase()}}, \
+        .value = &cfg->cfg_{{flag.name}}, \
+        .help = "{{flag.help}}", \
+    }, \
+{%- endfor %}
+}
 
-{%- if !no_auto_help %}
-	if (cfg->cfg_help) {
-		cfgopt_print_help(cfg, help);
-		exit(0);
-	}
-{%- endif %}
+#ifndef CFGOPT_AUTO_HELP
+#define CFGOPT_AUTO_HELP {% if no_auto_help %} 0 {% else %} 1 {% endif %}
+#endif
+
+struct cfgopt_result cfgopt_args_parse(struct cfgopt_args *cfg,
+                                       int argc,
+                                       char const **argv) {
+    struct cfgopt_flag_info flag_infos[] = cfgopt_get_flag_info(cfg);
+
+    struct cfgopt_parser p = cfgopt_new_parser(argv, argc);
+    struct cfgopt_result r = cfgopt_parse(&p, flag_infos, {{flags.len()}});
+
+#if CFGOPT_AUTO_HELP
+    if (cfg->cfg_help) {
+        cfgopt_args_print_help(stdout);
+        exit(0);
+    }
+#endif
+    return r;
 }
 
 #endif // CFGOPT_IMPL

@@ -1,18 +1,49 @@
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
 ---
 Language:        Cpp
-AlignAfterOpenBracket: true
-AlignArrayOfStructures: None
-AlignConsecutiveMacros: None
+
+# someLongFunction(argument1,
+#                  argument2);
+AlignAfterOpenBracket: Align
+
+# struct test demo[] =
+# {
+#     {56,    23, "hello"},
+#     {-1, 93463, "world"},
+#     { 7,     5,    "!!"}
+# };
+AlignArrayOfStructures: Right
+
 AlignConsecutiveAssignments: None
+AlignConsecutiveMacros: None
 AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
+
+# #define A                                                                 \
+#   int aaaa;                                                               \
+#   int b;                                                                  \
+#   int dddddddddd;
 AlignEscapedNewlines: Right
-AlignOperands:   Align
-AlignTrailingComments: true
+
+AlignOperands:   DontAlign
+AlignTrailingComments: false
+
+# callFunction(a,
+#              b,
+#              c,
+#              d);
 AllowAllArgumentsOnNextLine: false
-AllowAllParametersOfDeclarationOnNextLine: true
+
+# void myFunction(int a,
+#                 int b,
+#                 int c,
+#                 int d,
+#                 int e);
+AllowAllParametersOfDeclarationOnNextLine: false
+
+AllowShortBlocksOnASingleLine: Empty
 AllowShortEnumsOnASingleLine: true
-AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: All
 AllowShortLambdasOnASingleLine: All
@@ -22,23 +53,37 @@ AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: MultiLine
+
+# void f() {
+#   f(aaaaaaaaaaaaaaaaaaaa,
+#     aaaaaaaaaaaaaaaaaaaa,
+#     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+# }
 BinPackArguments: false
+
+# void f(int aaaaaaaaaaaaaaaaaaaa,
+#        int aaaaaaaaaaaaaaaaaaaa,
+#        int aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) {}
 BinPackParameters: false
-BreakBeforeBinaryOperators: None
+
+# void f() {
+# }
+BreakBeforeBraces: Attach
+
+BreakBeforeBinaryOperators: All
 BreakBeforeConceptDeclarations: true
-BreakBeforeBraces: Linux
 BreakBeforeInheritanceComma: false
 BreakInheritanceList: BeforeColon
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
-BreakConstructorInitializers: BeforeColon
+BreakConstructorInitializers: BeforeComma
 BreakStringLiterals: true
-ColumnLimit:     80
+ColumnLimit:     100
 CommentPragmas:  '^ IWYU pragma:'
 QualifierAlignment: Leave
 CompactNamespaces: false
-ContinuationIndentWidth: 8
-Cpp11BracedListStyle: true
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
 DeriveLineEnding: true
 DerivePointerAlignment: false
 DisableFormat:   false
@@ -49,15 +94,37 @@ PackConstructorInitializers: BinPack
 BasedOnStyle:    ''
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 AllowAllConstructorInitializersOnNextLine: true
-FixNamespaceComments: true
+FixNamespaceComments: false
+ForEachMacros:
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
+IfMacros:
+  - KJ_IF_MAYBE
 IncludeBlocks:   Preserve
+IncludeCategories:
+  - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
+    Priority:        2
+    SortPriority:    0
+    CaseSensitive:   false
+  - Regex:           '^(<|"(gtest|gmock|isl|json)/)'
+    Priority:        3
+    SortPriority:    0
+    CaseSensitive:   false
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    0
+    CaseSensitive:   false
+IncludeIsMainRegex: '(Test)?$'
+IncludeIsMainSourceRegex: ''
+IndentAccessModifiers: false
 IndentCaseLabels: false
 IndentCaseBlocks: false
 IndentGotoLabels: true
 IndentPPDirectives: None
 IndentExternBlock: AfterExternBlock
 IndentRequires:  false
-IndentWidth:     8
+IndentWidth:     4
 IndentWrappedFunctionNames: false
 InsertTrailingCommas: None
 KeepEmptyLinesAtTheStartOfBlocks: true
@@ -65,7 +132,7 @@ LambdaBodyIndentation: Signature
 MacroBlockBegin: ''
 MacroBlockEnd:   ''
 MaxEmptyLinesToKeep: 1
-NamespaceIndentation: None
+NamespaceIndentation: Inner
 PenaltyBreakAssignment: 2
 PenaltyBreakBeforeFirstCallParameter: 19
 PenaltyBreakComment: 300
@@ -76,7 +143,7 @@ PenaltyBreakTemplateDeclaration: 10
 PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 60
 PenaltyIndentedWhitespace: 0
-PointerAlignment: Right
+PointerAlignment: Left
 PPIndentWidth:   -1
 ReferenceAlignment: Pointer
 ReflowComments:  true
@@ -90,7 +157,6 @@ SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: true
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeCaseColon: false
-SpaceBeforeCpp11BracedList: false
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: ControlStatements
@@ -104,7 +170,7 @@ SpaceBeforeParensOptions:
   BeforeNonEmptyParentheses: false
 SpaceAroundPointerQualifiers: Default
 SpaceBeforeRangeBasedForLoopColon: true
-SpaceInEmptyBlock: false
+SpaceInEmptyBlock: true
 SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 1
 SpacesInAngles:  Never
@@ -119,8 +185,19 @@ SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
 BitFieldColonSpacing: Both
 Standard:        Latest
+StatementAttributeLikeMacros:
+  - Q_EMIT
+StatementMacros:
+  - Q_UNUSED
+  - QT_REQUIRE_VERSION
 TabWidth:        8
 UseCRLF:         false
-UseTab:          ForIndentation
+UseTab:          Never
+WhitespaceSensitiveMacros:
+  - STRINGIZE
+  - PP_STRINGIZE
+  - BOOST_PP_STRINGIZE
+  - NS_SWIFT_NAME
+  - CF_SWIFT_NAME
 ...
 
